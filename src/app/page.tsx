@@ -14,7 +14,7 @@ import { createSeedWorld } from "@/data/seed-data";
 export default function DashboardPage() {
   const { shops, riders, orders } = createSeedWorld();
   const availableRiders = riders.filter((r) => r.isAvailable).length;
-  const pendingOrders = orders.filter((o) => o.status === "pending").length;
+  const queuedOrders = orders.filter((o) => o.status === "queued").length;
 
   return (
     <div className="flex flex-1 flex-col bg-zinc-50 font-sans dark:bg-zinc-950">
@@ -23,7 +23,7 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Neon Dispatch</h1>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
             {shops.length} shops · {riders.length} riders ({availableRiders} available) ·{" "}
-            {orders.length} orders ({pendingOrders} pending)
+            {orders.length} orders ({queuedOrders} queued)
           </p>
         </header>
 

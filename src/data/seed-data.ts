@@ -1,4 +1,4 @@
-import type { Order, Rider, Shop } from "@/domain";
+import type { Order, Rider, Shop, World } from "@/domain";
 
 /**
  * Deterministic seed data for the simulation dashboard.
@@ -17,7 +17,7 @@ export const SEED_SHOPS: Shop[] = [
 ];
 
 export const SEED_RIDERS: Rider[] = [
-  { id: "rider-01", name: "Ada", location: { x: 1, y: 1 }, isAvailable: true },
+  { id: "rider-01", name: "Ada", location: { x: 1, y: 1 }, isAvailable: false },
   { id: "rider-02", name: "Boris", location: { x: 5, y: 5 }, isAvailable: false },
   { id: "rider-03", name: "Cleo", location: { x: 8, y: 2 }, isAvailable: true },
 ];
@@ -28,7 +28,8 @@ export const SEED_ORDERS: Order[] = [
     shopId: "shop-01",
     destination: { x: 4, y: 7 },
     assignedRiderId: null,
-    status: "pending",
+    status: "queued",
+    createdAt: 1,
   },
   {
     id: "order-02",
@@ -36,6 +37,7 @@ export const SEED_ORDERS: Order[] = [
     destination: { x: 6, y: 2 },
     assignedRiderId: "rider-02",
     status: "assigned",
+    createdAt: 2,
   },
   {
     id: "order-03",
@@ -43,13 +45,15 @@ export const SEED_ORDERS: Order[] = [
     destination: { x: 1, y: 5 },
     assignedRiderId: "rider-01",
     status: "assigned",
+    createdAt: 3,
   },
   {
     id: "order-04",
     shopId: "shop-02",
     destination: { x: 9, y: 8 },
     assignedRiderId: null,
-    status: "pending",
+    status: "queued",
+    createdAt: 4,
   },
   {
     id: "order-05",
@@ -57,6 +61,7 @@ export const SEED_ORDERS: Order[] = [
     destination: { x: 3, y: 4 },
     assignedRiderId: "rider-01",
     status: "delivered",
+    createdAt: 5,
   },
   {
     id: "order-06",
@@ -64,17 +69,23 @@ export const SEED_ORDERS: Order[] = [
     destination: { x: 2, y: 8 },
     assignedRiderId: "rider-02",
     status: "delivered",
+    createdAt: 6,
   },
 ];
 
-/** One consistent snapshot of simulation start state. */
-export interface SeedWorld {
-  shops: Shop[];
-  riders: Rider[];
-  orders: Order[];
-}
-
-export function createSeedWorld(): SeedWorld {
+/**
+ * One consistent snapshot of simulation start state.
+ *
+ * Reuses the domain World type: the seed is just the initial value
+ * for the same snapshot shape domain operations (dispatchNext) work
+ * on, so anything built on the seed is immediately dispatch-ready.
+ *
+ * Invariant in the seed (BR1): each rider with an active (assigned)
+ * order has exactly one - rider-01 holds order-03, rider-02 holds
+ * order-02; Ada and Boris are busy, Cleo is free; order-01 and
+ * order-04 wait in the queue (status queued, assignedRiderId null).
+ */
+export function createSeedWorld(): World {
   return {
     shops: SEED_SHOPS.map((shop) => ({ ...shop, location: { ...shop.location } })),
     riders: SEED_RIDERS.map((rider) => ({ ...rider, location: { ...rider.location } })),

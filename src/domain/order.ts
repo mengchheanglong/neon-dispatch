@@ -1,25 +1,49 @@
 import type { Position } from "./position";
 
 /**
- * OrderStatus: the lifecycle of one delivery.
+ * OrderStatus: the full planned delivery lifecycle (Phase 3).
  *
- * pending    -> created, waiting for a rider (initial state)
- * assigned   -> a rider picked the order up as their task
- * delivered  -> rider reached the destination (terminal state)
+ * created    -> order exists but has not been queued yet (not dispatchable)
+ * queued     -> ready for dispatch; this is the "waiting" state (FR1/BR3)
+ * assigned   -> an eligible rider took the job
+ * picked_up  -> goods collected from the shop
+ * in_transit -> on the way to the destination
+ * delivered  -> terminal: delivery complete (BR2)
+ * cancelled  -> terminal: order withdrawn (BR2)
  *
- * kept as a string union so TypeScript flags every switch that
- * misses a case, and so Phase 3 dispatch logic must handle all states.
+ * A string union keeps TypeScript enforcing exhaustive switches, and
+ * ORDER_STATUS_TRANSITIONS (see order-transitions.ts) encodes the
+ * transitions themselves so they can be validated in one place.
  */
-export const ORDER_STATUSES = ["pending", "assigned", "delivered"] as const;
+export const ORDER_STATUSES = [
+  "created",
+  "queued",
+  "assigned",
+  "picked_up",
+  "in_transit",
+  "delivered",
+  "cancelled",
+] as const;
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
+/** Statuses counted as active deliveries for the rider invariant (BR1). */
+export const ACTIVE_ORDER_STATUSES: readonly OrderStatus[] = [
+  "assigned",
+  "picked_up",
+  "in_transit",
+];
+
+/** Statuses eligible for dispatch: only queued orders are "waiting" (BR3). */
+export const DISPATCHABLE_STATUSES: readonly OrderStatus[] = ["queued"];
 
 /**
  * Order: one delivery job, from a shop to a fixed destination.
  *
- * The order owns the delivery's *facts* (what, from, to). It does not
- * own movement or decision-making - that is dispatch's job in a later
- * phase. `assignedRiderId` stays null until a rider takes the job.
+ * The order owns the delivery's *facts* (what, from, to, when it
+ * entered the system). It does not own decisions or movement - those
+ * are dispatch's job. `assignedRiderId` stays null until a rider
+ * takes the job.
  */
 export interface Order {
   /** Stable unique identifier, e.g. "order-01". */
@@ -32,4 +56,6 @@ export interface Order {
   assignedRiderId: string | null;
   /** Current lifecycle state. */
   status: OrderStatus;
+  /** Simulated clock tick when the order entered the queue; used to pick the oldest waiting order (FR1). */
+  createdAt: number;
 }
